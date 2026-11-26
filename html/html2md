@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""Turn the bibtex2html pages in this directory into Hugo pages for the website.
+
+Each foo.html becomes <dest>/foo.md: a small front-matter header followed by
+the HTML unchanged, except that
+  * links to the old site (mwhicks1.github.io) are rewritten to mhicks.me, and
+  * the two index pages (mwh.html, mwh-cat.html) get ", by Year" /
+    ", by Category" added to their titles.
+
+If foo.md already exists, its front matter is kept exactly as is (it may hold
+hand edits, e.g. a url whose case differs from the file name) and only the body
+is replaced. Only files whose contents would change are written. Nothing is
+ever deleted; pages in dest with no matching .html are listed as "stale".
+
+usage: html2md [--dry-run] [src-dir] [dest-dir]
+  src-dir   defaults to the directory containing this script
+  dest-dir  defaults to ~/Documents/mhicks-www/content/papers
+"""
+
+import os
+import re
+import sys
+
+OLD_SITE = re.compile(r"https?://mwhicks1\.github\.io/")
+NEW_SITE = "https://mhicks.me/"
+
+INDEX_TITLES = {"mwh": ", by Year", "mwh-cat": ", by Category"}
+BASE_TITLE = "Michael Hicks' Publications"
+
+FRONT_MATTER = """---
+title: Publication
+layout: single
+type: papers
+url: /papers/{name}.html
+---
+
+"""
+FRONT_RE = re.compile(r"\A---\n.*?\n---\n\n?", re.S)
+
+
+def convert(name, html, front):
+    body = OLD_SITE.sub(NEW_SITE, html)
+    if name in INDEX_TITLES:
+        full = BASE_TITLE + INDEX_TITLES[name]
+        body = body.replace(f"<title>{BASE_TITLE}</title>", f"<title>{full}</title>")
+        body = body.replace(f"<h2>{BASE_TITLE}</h2>", f"<h2>{full}</h2>")
+    return front + body
+
+
+def read_text(path):
+    # bibtex2html output is ASCII/UTF-8; surrogateescape keeps any odd bytes intact
+    with open(path, encoding="utf-8", errors="surrogateescape") as f:
+        return f.read()
+
+
+def main(argv):
+    dry_run = "--dry-run" in argv
+    args = [a for a in argv if a != "--dry-run"]
+    if len(args) > 2 or any(a.startswith("-") for a in args):
+        print(__doc__.strip(), file=sys.stderr)
+        return 1
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    src = args[0] if len(args) > 0 else here
+    dest = args[1] if len(args) > 1 else os.path.expanduser(
+        "~/Documents/mhicks-www/content/papers")
+    if not os.path.isdir(dest):
+        print(f"html2md: destination {dest} is not a directory", file=sys.stderr)
+        return 1
+
+    new, updated, same = [], [], 0
+    for fname in sorted(os.listdir(src)):
+        if not fname.endswith(".html"):
+            continue
+        name = fname[:-len(".html")]
+        html = read_text(os.path.join(src, fname))
+
+        out = os.path.join(dest, name + ".md")
+        old = read_text(out) if os.path.exists(out) else None
+        m = FRONT_RE.match(old) if old is not None else None
+        front = m.group(0) if m else FRONT_MATTER.format(name=name)
+        md = convert(name, html, front)
+
+        if old is not None:
+            if old == md:
+                same += 1
+                continue
+            updated.append(name)
+        else:
+            new.append(name)
+        if not dry_run:
+            with open(out, "w", encoding="utf-8", errors="surrogateescape",
+                      newline="") as f:
+                f.write(md)
+
+    # Pages in dest with no generated .html are probably for entries that
+    # were removed from or renamed in mwh.bib. Report them; never delete.
+    # (Case-insensitive, since macOS file names are; e.g. swamy07fableTR.)
+    generated = {f[:-len(".html")].lower() for f in os.listdir(src)
+                 if f.endswith(".html")}
+    stale = sorted(f for f in os.listdir(dest)
+                   if f.endswith(".md") and f != "_index.md"
+                   and f[:-len(".md")].lower() not in generated)
+
+    verb = "would write" if dry_run else "wrote"
+    for n in new:
+        print(f"new:     {n}.md")
+    for n in updated:
+        print(f"updated: {n}.md")
+    print(f"html2md: {verb} {len(new)} new, {len(updated)} updated; {same} unchanged")
+    if stale:
+        print(f"html2md: {len(stale)} page(s) in {dest} have no generated .html "
+              "(entry removed or renamed in mwh.bib?); delete them if so:")
+        for f in stale:
+            print(f"stale:   {f}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

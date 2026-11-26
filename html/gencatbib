@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# generates HTML file with papers by category
+
+categories="Security Safe_Low-level_Programming Dynamic_Software_Updating Quantum_Computation Testing_and_Verification Static_Analysis Multithreaded_Programming User_Interfaces Memory_Management Distributed_Programming Programmable_Networks Miscellaneous"
+
+if [ $# = 0 ]; then
+  echo "usage: $0 bib-file"
+  exit 1
+fi
+
+bibfile=$1
+fprefix=`basename ${bibfile%.bib}`
+prefix=`basename ${bibfile%.bib}-cat`
+
+echo "<html>" > $prefix.html
+echo >> $prefix.html
+echo "<head>" >> $prefix.html
+echo "<meta http-equiv=\"content-type\" content=\"text/html; charset=ISO-8859-1\">" >> $prefix.html
+echo " <link href=\"../style.css\" rel=\"stylesheet\" type=\"text/css\">" >> $prefix.html
+echo "<title>Michael Hicks' Publications</title>" >> $prefix.html
+echo "</head>" >> $prefix.html
+echo >> $prefix.html
+echo "<body>" >> $prefix.html
+echo "<h2>Michael Hicks' Publications</h2>" >> $prefix.html
+echo "Also see publications <a href = \"mwh.html\">by year</a>," >> $prefix.html
+echo "on <a href = \"https://dblp.org/pid/h/MichaelWHicks.html\">DBLP</a>, and <a href = \"https://scholar.google.com/citations?user=Gggzp7UAAAAJ&hl=en&oi=ao\">Google Scholar</a>." >> $prefix.html
+
+for cat in $categories; do
+  ./category2bib $cat $bibfile
+  if [ $? = 0 ]; then 
+    cat $fprefix$cat.html >> $prefix.html
+    rm -f $fprefix$cat.html
+  fi
+done
+
+echo "<hr><small><p>All works on this page are copyrighted. Permission to make digital or hard copies of all or part of these works for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that all copies bear this notice and the full citation on the first page. For some of these works, such license may be prohibited by the copyright owners. To copy otherwise, to republish, to post on servers or to redistribute, requires specific written permission and a fee.<p>Some of this work was supported by the National Science Foundation; any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.</small>" >> $prefix.html
+echo "</body>" >> $prefix.html
+exit 0

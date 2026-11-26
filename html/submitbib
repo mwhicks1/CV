@@ -1,0 +1,36 @@
+#!/bin/bash
+#
+# Generates a bib file from the given file that includes only files under submission
+
+TMPDIR=tmp
+
+if [ $# -lt 1 ]; then
+  echo "usage: $0 bibfile [bibfile2 ...]"
+  exit 1
+fi
+
+tmpkeys=tmp/keys$$
+tmpbib=tmp/mwh-sub.bib
+tmphtml=tmp/mwh-sub.html
+
+bib2bib -c '(note : "[Ss]ubmit" | ? submitted) & !(? omitfromweb)' -oc $tmpkeys -ob $tmpbib $*
+if [ -s "$tmpkeys" ]; then
+  bibtex2html -citefile $tmpkeys -s title-plain -d -r -nodoc -noheader -multiple -nometafields $tmpbib
+
+  rm -f $tmpkeys
+  rm -f $tmpbib
+
+  echo "<h3>Drafts</h3>" > $tmphtml
+  echo >> $tmphtml
+
+  lines=`wc -l mwh-sub.html | awk '{ print $1 }'`
+  lines=`expr $lines - 2`
+  head -$lines mwh-sub.html >> $tmphtml
+  echo "</table>" >> $tmphtml
+
+  mv $tmphtml .
+  exit 0
+else
+  exit 1
+fi
+

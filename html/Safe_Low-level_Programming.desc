@@ -1,0 +1,9 @@
+<p>Systems programs, such as operating systems, servers, network routers,
+and database systems are often written in low-level languages like C.
+Unfortunately, such systems are often plagued by pernicious, low-level
+bugs which can lead to incorrect behavior, crashes, and/or security
+compromises.  I have spent several years exploring how to improve the
+reliability and security of low-level systems through the use of
+programming languages and analyses.
+</p>
+<p></p>

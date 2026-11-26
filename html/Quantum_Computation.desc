@@ -1,0 +1,10 @@
+<p>Quantum computers promise dramatic speedups for some problems, but
+quantum programs are hard to get right: their behavior is
+probabilistic, their state cannot be inspected without disturbing it,
+and the hardware is scarce and noisy.  I have explored how programming
+languages and formal verification can help, developing verified
+compilers and optimizers for quantum circuits, a formally certified
+implementation of Shor's factoring algorithm, and languages that unify
+quantum and classical computation.
+</p>
+<p></p>

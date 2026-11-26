@@ -1,0 +1,169 @@
+From 121e66140499d8d5de71648768ff7bf369ee282d Mon Sep 17 00:00:00 2001
+From: Michael Hicks <mwh@cis.upenn.edu>
+Date: Sun, 14 Feb 2021 21:18:43 -0500
+Subject: [PATCH] Customization for personal web page
+
+---
+ biboutput.ml  | 17 ++++++++++++-----
+ biboutput.mli |  5 +++++
+ main.ml       |  4 ++++
+ translate.ml  | 25 ++++++++++++++++---------
+ 4 files changed, 37 insertions(+), 14 deletions(-)
+
+diff --git a/biboutput.ml b/biboutput.ml
+index 7c43a60..8469379 100644
+--- a/biboutput.ml
++++ b/biboutput.ml
+@@ -23,6 +23,9 @@ let link_fields = ref []
+ let add_link_field f = link_fields := f :: !link_fields
+ let is_link_field f = List.mem f !link_fields
+ 
++let omit_meta_fields = ref false
++let meta_fields = ref [ "abstract"; "url"; "category"; "optnote"; "submitted" ]
++
+ let needs_output k = function
+   | None -> true
+   | Some s -> KeySet.mem k s
+@@ -85,10 +88,13 @@ let print_link_field ch = function
+ 
+ let print_command remove rename html html_file ch keys = function
+   | Comment s ->
+-      if html then output_string ch "<pre>\n";
+-      output_string ch ("@comment{{" ^ s ^ "}}\n");
+-      if html then output_string ch "</pre>\n";
+-      output_string ch "\n"
++      if !omit_meta_fields then ()
++      else begin
++        if html then output_string ch "<pre>\n";
++        output_string ch ("@comment{{" ^ s ^ "}}\n");
++        if html then output_string ch "</pre>\n";
++        output_string ch "\n"
++      end
+   | Preamble l ->
+       if html then output_string ch "<pre>\n";
+       output_string ch "@preamble{";
+@@ -124,7 +130,8 @@ let print_command remove rename html html_file ch keys = function
+ 	  end;
+ 	  List.iter
+ 	    (fun (field,l) ->
+-               if not (List.mem field remove) then
++               if not (List.mem field remove) &&
++                  not (!omit_meta_fields && (List.mem field !meta_fields)) then
+                  begin
+                    let ofield =
+                      try List.assoc field rename
+diff --git a/biboutput.mli b/biboutput.mli
+index 7128b64..fc29bea 100644
+--- a/biboutput.mli
++++ b/biboutput.mli
+@@ -38,3 +38,8 @@ val output_bib :
+     (when HTML option of [output_bib] is set) *)
+ 
+ val add_link_field : string -> unit
++
++(*s [omit_meta_fields] indicates that meta-level fields should be
++    excluded from printed bibtex entries. *)
++
++val omit_meta_fields : bool ref
+diff --git a/main.ml b/main.ml
+index e17b06a..5178ca3 100644
+--- a/main.ml
++++ b/main.ml
+@@ -376,6 +376,8 @@ Usage: bibtex2html <options> [filename]
+   -noexpand  do not expand abbreviations in the BibTeX output
+   -nobibsource
+              do not produce the BibTeX entries file
++  -nometafields
++             do not print meta-fields in BibTeX entries
+   -fsuffix   give an alternate suffix for HTML files
+   -lsuffix   give an alternate suffix for HTML links
+   -suffix s  give an alternate suffix for HTML files and links
+@@ -499,6 +501,8 @@ i*)
+ 	both := true; parse_rec rem
+     | ("-dl" | "--dl") :: rem ->
+ 	table := DL; parse_rec rem
++    | ("-nometafields" | "-no-meta-fields" | "--no-meta-fields") :: rem ->
++        Biboutput.omit_meta_fields := true; parse_rec rem
+     | ("-unicode" | "--unicode") :: rem ->
+ 	Latexmacros.unicode_entities (); parse_rec rem
+     | ("-html-entities" | "--html-entities") :: rem ->
+diff --git a/translate.ml b/translate.ml
+index 85172fb..eb04c2e 100644
+--- a/translate.ml
++++ b/translate.ml
+@@ -299,7 +299,9 @@ let blockquote ch f =
+   Html.close_balise ch "blockquote";
+   output_string ch "\n"
+ 
+-let display_abstract ch a = blockquote ch (fun () -> latex2html ch a)
++let display_abstract ch a = 
++  if !multiple then latex2html ch a
++  else blockquote ch (fun () -> latex2html ch a)
+ 
+ let display_notes ch e =
+   List.iter
+@@ -346,7 +348,7 @@ let bibtex_entry k =
+     l_name =
+       "bib" }
+ 
+-let separate_file (b,((_,k,f) as e)) =
++let separate_file (b,((_,k,f) as e)) biblio =
+   in_summary := false;
+   let file = k ^ !file_suffix in
+   let ch = open_out file in
+@@ -356,11 +358,13 @@ let separate_file (b,((_,k,f) as e)) =
+     Html.open_document ch (fun () -> output_string ch title)
+   end;
+   if !print_header then header ch;
+-  Html.open_balise ch "h2";
++(*  Html.open_balise ch "h2"; *)
++  Html.open_balise ch "font size=\"+1\"";
+   latex2html ch b;
+-  Html.close_balise ch "h2";
++(*  Html.close_balise ch "h2"; *)
++  Html.close_balise ch "font";
+   if !print_header then output_string ch !user_header;
+-  (* JK Html.paragraph ch; *)
++  Html.paragraph ch;
+   let labs = match make_abstract e with
+     | Atext a -> display_abstract ch a; []
+     | Alink l -> [l]
+@@ -371,14 +375,17 @@ let separate_file (b,((_,k,f) as e)) =
+   if !print_keywords then display_keywords ch e;
+   display_links ch
+     (labs
+-      @ (if !bib_entries then [bibtex_entry k] else [])
++(*      @ (if !bib_entries then [bibtex_entry k] else []) *)
+       @ doi_link e
+       @ eprint_link e
+       @ make_links e);
++  if !bib_entries then
++    Biboutput.output_bib true ch biblio (Some (Bibtex.KeySet.singleton k));
+   (* JK Html.paragraph ch; *)
+-  Html.open_href ch (!output_file ^ !link_suffix);
++(*  Html.open_href ch (!output_file ^ !link_suffix);
+   output_string ch "Back";
+   Html.close_href ch;
++  *)
+   if !print_footer then footer ch;
+   if not !nodoc then Html.close_document ch;
+   close_out ch;
+@@ -449,7 +456,7 @@ let one_entry_summary ch biblio (_,b,((_,k,f) as e)) =
+   output_string ch "\n";
+ 
+   if !multiple then
+-    separate_file (b,e)
++    separate_file (b,e) biblio
+   else if !single then begin
+     let ks = Bibtex.KeySet.singleton k in
+     let ks = Bibfilter.saturate biblio ks in
+@@ -576,5 +583,5 @@ let format_list biblio sorted_bl keys =
+   end else
+     summary biblio sorted_bl;
+   (* BibTeX entries file *)
+-  if !bib_entries then bib_file biblio keys
++  if !bib_entries && not !multiple then bib_file biblio keys
+ 
+-- 
+2.30.1 (Apple Git-130)
+

@@ -1,0 +1,62 @@
+#!/bin/bash
+#
+# Generates a bib file from the given file specialized to the given category
+
+# set -x
+
+TMPDIR=tmp
+
+if [ $# -lt 2 ]; then
+  echo "usage: $0 category bibfile [bibfile2 ...]"
+  exit 1
+fi
+
+category=$1
+spacecat=`echo $category | sed -e 's/_/ /g'`
+shift
+
+tmpkeys=tmp/keys$$
+tmpbib=tmp/mwh$category.bib
+tmphtml=tmp/mwh$category.html
+
+bib2bib -c "category : \"$category\" & \$type <> \"TECHREPORT\" & !(? omitfromweb)" -oc $tmpkeys -ob $tmpbib $*
+if [ -s "$tmpkeys" ]; then
+  bibtex2html -css "../style.css" -citefile $tmpkeys -s title-plain -d -r -nodoc -noheader -multiple -nometafields $tmpbib
+
+  rm -f $tmpkeys
+  rm -f $tmpbib
+
+  echo "<h3><u>$spacecat</u></h3>" > $tmphtml
+  echo >> $tmphtml
+  echo '<span style="font-style:italic">' >> $tmphtml
+  cat $category.desc >> $tmphtml 
+  echo '</span>' >> $tmphtml
+
+  lines=`wc -l mwh$category.html | awk '{ print $1 }'`
+  lines=`expr $lines - 2`
+  head -$lines mwh$category.html >> $tmphtml
+  echo "</table>" >> $tmphtml
+
+  # do it again, but just for the TRs
+  bib2bib -c "category : \"$category\" & \$type = \"TECHREPORT\" & !(? omitfromweb)" -oc $tmpkeys -ob $tmpbib $*
+  if [ -s "$tmpkeys" ]; then
+    bibtex2html -css "../style.css" -citefile $tmpkeys -s title-plain -d -r -nodoc -noheader -multiple -nometafields $tmpbib
+
+    rm -f $tmpkeys
+    rm -f $tmpbib
+
+    echo '<p><span style="font-size: 85%">Technical Reports</span><p>' >> $tmphtml
+    echo >> $tmphtml
+
+    lines=`wc -l mwh$category.html | awk '{ print $1 }'`
+    lines=`expr $lines - 2`
+    head -$lines mwh$category.html | sed -e 's/<table>/<table style="font-size: 85%">/' >> $tmphtml
+    echo "</table>" >> $tmphtml
+  fi
+
+  mv $tmphtml .
+  exit 0
+else
+  exit 1
+fi
+

@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# generates HTML file with papers by year
+
+set -x
+
+if [ $# -lt 2 ]; then
+  echo "usage: $0 bib-file start-year [end-year]"
+  exit 1
+elif [ $# = 3 ]; then
+  endyear=$3
+else
+  endyear=`date | awk '{ print $6 }'`
+fi
+
+bibfile=$1
+startyear=$2
+prefix=`basename ${bibfile%.bib}`
+
+echo "<html>" > $prefix.html
+echo >> $prefix.html
+echo "<head>" >> $prefix.html
+echo "<meta http-equiv=\"content-type\" content=\"text/html; charset=ISO-8859-1\">" >> $prefix.html
+echo " <link href=\"../style.css\" rel=\"stylesheet\" type=\"text/css\">" >> $prefix.html
+echo "<title>Michael Hicks' Publications</title>" >> $prefix.html
+echo "</head>" >> $prefix.html
+echo >> $prefix.html
+echo "<body>" >> $prefix.html
+echo "<h2>Michael Hicks' Publications</h2>" >> $prefix.html
+echo "Also see publications <a href = \"mwh-cat.html\">by category</a>," >> $prefix.html
+echo "on <a href = \"https://dblp.org/pid/h/MichaelWHicks.html\">DBLP</a>, and <a href = \"https://scholar.google.com/citations?user=Gggzp7UAAAAJ&hl=en&oi=ao\">Google Scholar</a>." >> $prefix.html
+
+./submitbib $bibfile
+if [ $? = 0 ]; then
+  cat $prefix-sub.html >> $prefix.html
+  rm -f $prefix-sub.html
+fi
+while [ $startyear -le $endyear ]; do
+  ./year2bib $endyear $bibfile
+  if [ $? = 0 ]; then 
+    cat $prefix$endyear.html >> $prefix.html
+    rm -f $prefix$endyear.html
+  fi
+  endyear=`expr $endyear - 1`
+done
+
+echo "<hr><small><p>All works on this page are copyrighted. Permission to make digital or hard copies of all or part of these works for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that all copies bear this notice and the full citation on the first page. For some of these works, such license may be prohibited by the copyright owners. To copy otherwise, to republish, to post on servers or to redistribute, requires specific written permission and a fee.<p>Some of this work was supported by the National Science Foundation; any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.</small>" >> $prefix.html
+echo "</body>" >> $prefix.html
+exit 0

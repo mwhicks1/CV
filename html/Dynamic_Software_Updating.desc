@@ -1,0 +1,17 @@
+<p>Software updates typically require stopping and restarting an application,
+but many systems cannot afford to halt service, or would prefer not to.
+Nonstop systems often employ special-purpose architectures or redundant
+hardware to facilitate on-line upgrades, but these techniques are not always
+appropriate.  For example, we would like to support on-line upgrades for
+personal computer operating systems: users could then apply security patches
+and feature upgrades without having to shut down applications and restart
+their systems.  To support such systems, I have been exploring techniques
+for <i>Dynamic Software Updating</i> (DSU), in which an application can be
+dynamically patched while it runs.  This approach is appealing because it is
+general-purpose: any application can made dynamically updatable without
+requiring special support.  The challenge is in making DSU practical: it
+should be flexible, and yet safe, efficient, and easy to use.  I have been
+exploring semantic foundations, analyses, and implementation techniques
+toward meeting this challenge.
+</p>
+<p></p>

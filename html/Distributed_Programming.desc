@@ -1,0 +1,7 @@
+<p>Networked computing resources are ubiquitous, and yet most programming
+models target sequential, non-distributed computation.  I have
+explored language support that can improve the reliability, security, and
+performance of distributed programming while easing the programming
+burden.
+</p>
+<p></p>

@@ -1,0 +1,61 @@
+#!/bin/bash
+#
+# Generates a bib file from the given file specialized to the given year.
+
+# set -x
+
+TMPDIR=tmp
+
+if [ $# -lt 2 ]; then
+  echo "usage: $0 year bibfile [bibfile2 ...]"
+  exit 1
+fi
+
+year=$1
+shift
+
+tmpkeys=tmp/keys$$
+tmpbib=tmp/mwh$year.bib
+tmphtml=tmp/mwh$year.html
+
+found=0
+echo "<h3>$year</h3>" > $tmphtml
+echo >> $tmphtml
+
+bib2bib -c "year = $year & \$type <> \"TECHREPORT\" & !(? omitfromweb) & !(note : \"[Ss]ubmit\" | ? submitted)" -oc $tmpkeys -ob $tmpbib $*
+if [ -s "$tmpkeys" ]; then
+  found=1
+  bibtex2html -citefile $tmpkeys -s title-plain -d -r -nodoc -noheader -multiple -nometafields $tmpbib
+
+  lines=`wc -l mwh$year.html | awk '{ print $1 }'`
+  lines=`expr $lines - 2`
+  head -$lines mwh$year.html >> $tmphtml
+  echo "</table>" >> $tmphtml
+fi
+rm -f $tmpkeys
+rm -f $tmpbib
+
+# do it again, but just for the TRs (emitted even if the year has no other papers)
+bib2bib -c "year = $year & \$type = \"TECHREPORT\" & !(? omitfromweb)" -oc $tmpkeys -ob $tmpbib $*
+if [ -s "$tmpkeys" ]; then
+  found=1
+  bibtex2html -citefile $tmpkeys -s title-plain -d -r -nodoc -noheader -multiple -nometafields $tmpbib
+
+  echo '<p><span style="font-size: 85%">Technical Reports</span><p>' >> $tmphtml
+  echo >> $tmphtml
+
+  lines=`wc -l mwh$year.html | awk '{ print $1 }'`
+  lines=`expr $lines - 2`
+  head -$lines mwh$year.html | sed -e 's/<table>/<table style="font-size: 85%">/' >> $tmphtml
+  echo "</table>" >> $tmphtml
+fi
+rm -f $tmpkeys
+rm -f $tmpbib
+
+if [ $found = 1 ]; then
+  mv $tmphtml .
+  exit 0
+else
+  rm -f $tmphtml
+  exit 1
+fi

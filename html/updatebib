@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+
+./gencatbib ../mwh.bib
+if [ $? != 0 ]; then
+  echo Failed!
+  exit 1
+fi
+
+# list years through next year, so "to appear" papers dated next year show up
+./genbib ../mwh.bib 1997 $(( $(date +%Y) + 1 ))
+if [ $? != 0 ]; then
+  echo Failed!
+  exit 1
+fi
+
+./rmback
+
+# Generate/refresh the Hugo pages in ~/Documents/mhicks-www/content/papers
+./html2md
+if [ $? != 0 ]; then
+  echo Failed!
+  exit 1
+fi

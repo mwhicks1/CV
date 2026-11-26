@@ -1,0 +1,9 @@
+<p>Dynamic memory management is an important aspect of most computer
+systems software.  One popular form of memory management is
+garbage collection, which ensures the absence of dangling pointers
+by managing memory automatically.  I have explored techniques for
+improving the performance of garbage collection, and techniques
+toward ensuring that, when manual memory management is necessary for
+performance reasons, that it is used safely.
+</p>
+<p></p>

@@ -1,0 +1,10 @@
+#!/bin/sh
+# Removes the "Back" links from the generated files
+#
+files=`grep -l -e '<p><a href=\"[^\"]*\">Back</a>' *.html`
+tmpfile=tmp/filerm$$
+for file in $files; do
+  echo "cleaning up ||$file||"
+  sed 's#<p><a href=\"[^\"]*\">Back</a>##' $file > $tmpfile && mv $tmpfile $file
+done
+rm -f $tmpfile

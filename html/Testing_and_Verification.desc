@@ -1,0 +1,8 @@
+<p>Testing and formal verification are complementary routes to
+confidence that software does what it should.  I have worked on making
+fuzz testing more effective and evaluating it more rigorously, on
+property-based testing and its foundations, and on using
+verification-aware languages like Dafny and Lean to build and evolve
+high-assurance systems, such as the Cedar authorization language.
+</p>
+<p></p>

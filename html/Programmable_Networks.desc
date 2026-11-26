@@ -1,0 +1,12 @@
+<p>The explosive growth of the Internet has placed new and increased
+demands on the network infrastructure. Applications now have varied
+service requirements such as high bandwidth, low delay, low jitter,
+etc. The one-size-fits-all, single-service model of IP, which has
+certainly contributed to its success, often no longer fits user or
+application needs.  To meet these new demands, I spent several years
+researching <i>active</i> (a.k.a. programmable) networks, which can evolve
+to encompass new service models and protocols.  Many ideas from active
+networks are finding deployment in things such as middleware boxes,
+overlay and peer to peer networks, multi-path routing, and more.
+</p>
+<p></p>

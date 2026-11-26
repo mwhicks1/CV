@@ -1,0 +1,8 @@
+<p>Multithreaded programming is becoming increasingly important as
+parallel machines become more widespread, and yet, writing
+multi-threaded software can be quite difficult.  The programmer must
+reason about the myriad of possible thread interactions through shared
+resources.  I have been exploring means to use static and dynamic
+analysis to simplify the process of multithreaded programming, and to
+identify important low-level bugs, particularly data races and
+violations of atomicity.  </p> <p></p>
